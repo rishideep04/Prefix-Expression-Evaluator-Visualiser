@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Prefix Expression Evaluator</title>
+  <style>
+    body {
+      background-color: #1d1d1d;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    h1 {
+      color: #ffffff;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .expression-input {
+      margin-bottom: 20px;
+    }
+    
+    .expression-input input[type="text"] {
+      border: none;
+      border-bottom: 2px solid #ffffff;
+      background-color: transparent;
+      color: #ffffff;
+      font-size: 24px;
+      padding: 10px;
+      width: 300px;
+      transition: border-color 0.3s ease-in-out;
+    }
+    
+    .expression-input input[type="text"]::placeholder {
+      color: #ffffff;
+      opacity: 0.5;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    .expression-input input[type="text"]:focus {
+      outline: none;
+      border-color: #00ff00;
+      box-shadow: 0 0 10px #00ff00;
+    }
+    
+    .expression-input label {
+      color: #ffffff;
+      font-size: 18px;
+      position: absolute;
+      top: -30px;
+      left: 10px;
+      opacity: 0.7;
+      transition: all 0.3s ease-in-out;
+    }
+    
+    .expression-input input[type="text"]:focus + label,
+    .expression-input input[type="text"]:not(:placeholder-shown) + label {
+      top: -50px;
+      font-size: 14px;
+      opacity: 1;
+      color: #00ff00;
+      transition: top 0.3s ease-in-out, font-size 0.3s ease-in-out, color 0.3s ease-in-out;
+    }
+    
+    .expression-input input[type="text"]:hover {
+      border-color: #00ff00;
+      transition: border-color 0.3s ease-in-out;
+    }
+    
+    .expression-input input[type="text"]:hover::placeholder {
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    .btn {
+      align-items: center;
+      background-image: linear-gradient(144deg, #AF40FF, #5B42F3 50%, #00DDEB);
+      border: 0;
+      border-radius: 8px;
+      box-shadow: rgba(151, 65, 252, 0.2) 0 15px 30px -5px;
+      box-sizing: border-box;
+      color: #FFFFFF;
+      display: flex;
+      font-family: Phantomsans, sans-serif;
+      font-size: 20px;
+      justify-content: center;
+      line-height: 1em;
+      max-width: 100%;
+      min-width: 140px;
+      padding: 3px;
+      text-decoration: none;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    
+    .btn:active,
+    .btn:hover {
+      outline: 0;
+    }
+    
+    .btn span {
+      background-color: rgb(5, 6, 45);
+      padding: 16px 24px;
+      border-radius: 6px;
+      width: 100%;
+      height: 100%;
+      transition: 300ms;
+    }
+    
+    .btn:hover span {
+      background: none;
+    }
+    
+    @media (min-width: 768px) {
+      .btn {
+        font-size: 24px;
+        min-width: 196px;
+      }
+    }
+    
+    .result-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #ffffff;
+      margin-top: 20px;
+    }
+    
+    .step {
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+    
+    .error {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    
+    .animated {
+      animation-duration: 0.5s;
+      animation-fill-mode: forwards;
+      animation-iteration-count: 1;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    
+    .stack-visualization {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    
+    .stack-box {
+      display: block;
+      margin-bottom: 10px;
+      background-color: #333;
+      padding: 10px;
+      border-radius: 4px;
+      opacity: 0;
+      animation-name: stackAnimation;
+      animation-duration: 1s;
+      animation-fill-mode: forwards;
+      transform: rotate(0deg) scale(0.5);
+      transition: transform 0.8s ease-in-out;
+    }
+    .stack-box.operator {
+  background-color: #555;
+}
+
+    
+    .stack-box.animate {
+      transform: rotate(720deg) scale(1.5);
+    }
+    
+    @keyframes stackAnimation {
+      from {
+        opacity: 0;
+        transform: rotate(0deg) scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: rotate(720deg) scale(1.5);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>Prefix Expression Evaluator</h1>
+    <div class="expression-input">
+      <label for="expression">Enter Prefix Expression:</label>
+      <input type="text" id="expression" placeholder="+ 2 3">
+    </div>
+    <button class="btn" role="button" onclick="evaluateExpression()"><span class="text">Evaluate</span></button>
+    <div id="result" class="result-container"></div>
+    <div id="stack" class="stack-visualization"></div>
+  </div>
+
+  <script>
+    function evaluateExpression() {
+      const expressionInput = document.getElementById("expression");
+      const expression = expressionInput.value.trim();
+      const resultContainer = document.getElementById("result");
+      const stackContainer = document.getElementById("stack");
+
+      if (expression === "") {
+        resultContainer.innerHTML = "<span class='error'>Please enter an expression.</span>";
+        return;
+      }
+
+      const tokens = expression.split(" ");
+      const stack = [];
+
+      const operatorsCount = tokens.filter(token => isNaN(token)).length;
+      const operandsCount = tokens.filter(token => !isNaN(token)).length;
+
+      if (operatorsCount !== operandsCount - 1) {
+        resultContainer.innerHTML = "<span class='error'>Invalid expression. The number of operators should be equal to the number of operands minus 1.</span>";
+        return;
+      }
+
+      let i = tokens.length - 1;
+      animateToken(expressionInput); // Animate the input field
+
+      resultContainer.innerHTML = ""; // Clear previous steps
+      stackContainer.innerHTML = ""; // Clear previous stack visualization
+
+      const interval = setInterval(() => {
+        const token = tokens[i];
+
+        if (!isNaN(token)) {
+          stack.push(token);
+          resultContainer.innerHTML += `<div class='step'>Pushed ${token} to stack.</div>`;
+        } else {
+          const operand1 = stack.pop();
+          const operand2 = stack.pop();
+
+          if (operand1 === undefined || operand2 === undefined) {
+            resultContainer.innerHTML += "<div class='step error'>Invalid expression.</div>";
+            clearInterval(interval);
+            return;
+          }
+
+          const operation = token;
+          const result = performOperation(operation, operand1, operand2);
+          stack.push(result);
+
+          resultContainer.innerHTML += `<div class='step'>Performed ${operation} on ${operand1} and ${operand2}.<br> Result: ${result}</div>`;
+        }
+
+        animateToken(expressionInput);
+        updateStackVisualization(stack, stackContainer); // Update stack visualization
+        i--;
+
+        if (i < 0) {
+          clearInterval(interval);
+          if (stack.length === 1) {
+            resultContainer.innerHTML += "<div class='step'>\nFinal Result: " + stack.pop() + "</div>";
+          } else {
+            resultContainer.innerHTML += "<div class='step error'>Invalid expression.</div>";
+          }
+        }
+      }, 1000);
+    }
+
+    function performOperation(operation, operand1, operand2) {
+      const op1 = parseFloat(operand1);
+      const op2 = parseFloat(operand2);
+
+      switch (operation) {
+        case "+":
+          return op1 + op2;
+        case "-":
+          return op1 - op2;
+        case "*":
+          return op1 * op2;
+        case "/":
+          return op1 / op2;
+        default:
+          return NaN;
+      }
+    }
+
+    function animateToken(element) {
+      element.classList.add("animated");
+      element.style.animationName = "fadeIn";
+
+      setTimeout(() => {
+        element.style.animationName = "";
+        element.classList.remove("animated");
+      }, 500);
+    }
+
+    function updateStackVisualization(stack, stackContainer) {
+  stackContainer.innerHTML = ""; // Clear previous stack visualization
+
+  for (let i = stack.length - 1; i >= 0; i--) {
+    const stackBox = document.createElement("div");
+    stackBox.className = "stack-box animate";
+
+    if (isNaN(stack[i])) {
+      stackBox.textContent = + stack[i]; // Display operators
+    } else {
+      stackBox.textContent = + stack[i]; // Display operands
+    }
+
+    stackContainer.appendChild(stackBox);
+    stackBox.style.animationDelay = `${(stack.length - i - 1) * 0.2}s`;
+  }
+}
+
+
+  </script>
+</body>
+</html>
